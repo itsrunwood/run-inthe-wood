@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            var(--primary): #4f6357; 
             --primary: #4f6357; 
             --primary-light: #e6ece8; 
             --bg-color: #F4F7F6;
@@ -80,17 +79,17 @@
 
         /* --- STYLES DU POP-UP (MODAL) --- */
         .modal-overlay {
-            display: none; /* Caché par défaut */
+            display: none; 
             position: fixed;
             z-index: 1000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* Fond semi-transparent */
+            background-color: rgba(0, 0, 0, 0.5); 
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(3px); /* Effet flou sur l'arrière plan */
+            backdrop-filter: blur(3px); 
         }
         
         .modal-content {
@@ -368,7 +367,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Variable globale pour stocker les infos du profil localement
         let currentUserData = null;
 
         onAuthStateChanged(auth, async (user) => {
@@ -401,10 +399,8 @@
             }
         }
 
-        // --- LOGIQUE DU POP-UP MODAL PROFIL ---
         const profileModal = document.getElementById('profile-modal');
         
-        // Ouvrir le pop-up et pré-remplir les champs
         document.getElementById('btn-open-modal').onclick = () => {
             if(currentUserData) {
                 document.getElementById('modal-fullname').value = currentUserData.nom || '';
@@ -414,19 +410,16 @@
             profileModal.style.display = 'flex';
         };
 
-        // Fermer le pop-up (bouton X)
         document.getElementById('close-modal').onclick = () => {
             profileModal.style.display = 'none';
         };
 
-        // Fermer le pop-up si on clique en dehors de la boite blanche
         window.onclick = (event) => {
             if (event.target == profileModal) {
                 profileModal.style.display = 'none';
             }
         };
 
-        // Sauvegarder les modifications du modal
         document.getElementById('btn-update-profile').onclick = async () => {
             const uid = auth.currentUser.uid;
             const profile = {
@@ -437,10 +430,9 @@
             await setDoc(doc(db, "users", uid), profile);
             alert("Profil mis à jour avec succès !");
             profileModal.style.display = 'none';
-            loadUserProfile(uid); // Recharge les données à l'écran
+            loadUserProfile(uid); 
         };
 
-        // Sauvegarder le profil initial (si nouveau compte)
         document.getElementById('btn-save-profile').onclick = async () => {
             const uid = auth.currentUser.uid;
             const profile = {
@@ -504,9 +496,10 @@
             };
             
             try {
-                await addDoc(collection(db, "performances"), donnees);
+                // ---> CHANGEMENT ICI : "data" au lieu de "performances" <---
+                await addDoc(collection(db, "data"), donnees);
+                
                 alert("🏃‍♂️ Séance enregistrée !");
-                // Réinitialisation partielle pour la prochaine saisie
                 document.getElementById('distance').value = 10;
                 document.getElementById('duree').value = 60;
                 document.getElementById('altitude').value = 300;
