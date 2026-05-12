@@ -7,9 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* NOUVELLES COULEURS ICI */
+            var(--primary): #4f6357; 
             --primary: #4f6357; 
-            --primary-light: #e6ece8; /* Un vert très clair pour les fonds */
+            --primary-light: #e6ece8; 
             --bg-color: #F4F7F6;
             --card-bg: #FFFFFF;
             --text-main: #1C1C1E;
@@ -24,7 +24,10 @@
         .auth-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
         
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 30px 0; }
-        .user-info { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
+        .user-info { font-size: 13px; color: var(--primary); font-weight: 600; cursor: pointer; padding: 6px 12px; border-radius: 12px; transition: 0.2s; }
+        .user-info:hover { background: var(--primary-light); }
+        
+        .header-actions { display: flex; gap: 10px; align-items: center; }
 
         .card { background: var(--card-bg); margin-bottom: 25px; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .card-title { font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
@@ -40,7 +43,6 @@
         .segmented-control { display: flex; background: var(--primary-light); border-radius: 12px; padding: 4px; margin-bottom: 15px; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control label { flex: 1; text-align: center; padding: 10px 0; border-radius: 8px; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
-        /* L'ombre prend désormais la couleur verte en RGB (79, 99, 87) */
         .segmented-control input[type="radio"]:checked + label { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(79, 99, 87, 0.3); }
 
         .date-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; scroll-behavior: smooth; }
@@ -59,21 +61,15 @@
         .grid-buttons label { text-align: center; padding: 12px 5px; border-radius: 12px; font-size: 14px; background: #F8F8F8; border: 1px solid var(--border-color); cursor: pointer; }
         .grid-buttons input[type="radio"]:checked + label { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Ombre du bouton principal adaptée en vert */
         .btn-submit { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(79, 99, 87, 0.3); transition: 0.2s;}
         .btn-submit:hover { filter: brightness(1.1); }
 
         /* --- STYLES DU LOGO --- */
-        .ritw-logo {
-            display: inline-flex;
-            align-items: flex-start;
-            font-family: 'Poppins', sans-serif;
-        }
+        .ritw-logo { display: inline-flex; align-items: flex-start; font-family: 'Poppins', sans-serif; }
         .ritw-part { line-height: 1; }
         .ritw-part.large { font-weight: 700; color: var(--text-main); letter-spacing: -1px; }
         .ritw-part.small { font-weight: 400; color: var(--text-muted); vertical-align: sub; }
 
-        /* Variantes de taille pour le logo */
         .logo-auth { justify-content: center; width: 100%; margin-bottom: 15px; }
         .logo-auth .large { font-size: 38px; }
         .logo-auth .small { font-size: 16px; padding-top: 4px; }
@@ -81,9 +77,69 @@
         .logo-header { justify-content: flex-start; }
         .logo-header .large { font-size: 24px; }
         .logo-header .small { font-size: 10px; padding-top: 2px; }
+
+        /* --- STYLES DU POP-UP (MODAL) --- */
+        .modal-overlay {
+            display: none; /* Caché par défaut */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Fond semi-transparent */
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px); /* Effet flou sur l'arrière plan */
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .close-modal:hover { color: var(--text-main); }
     </style>
 </head>
 <body>
+
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" id="close-modal">&times;</span>
+            <h3 class="card-title" style="margin-top: 0;">Mon Profil</h3>
+            
+            <div class="input-group">
+                <label class="input-label">Nom complet</label>
+                <input type="text" id="modal-fullname">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="input-group">
+                    <label class="input-label">Taille (cm)</label>
+                    <input type="number" id="modal-height">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Poids de base (kg)</label>
+                    <input type="number" id="modal-weight" step="0.1">
+                </div>
+            </div>
+            <button type="button" class="btn-submit" id="btn-update-profile">Mettre à jour</button>
+        </div>
+    </div>
 
     <div class="app-container">
         
@@ -112,7 +168,10 @@
                     <span class="ritw-part small">(inthe)</span>
                     <span class="ritw-part large">wood</span>
                 </div>
-                <span class="user-info" id="btn-logout">Déconnexion</span>
+                <div class="header-actions">
+                    <span class="user-info" id="btn-open-modal" style="background: var(--primary-light);">Profil</span>
+                    <span class="user-info" id="btn-logout" style="color: var(--text-muted);">Déconnexion</span>
+                </div>
             </header>
 
             <h2 style="font-size: 18px; margin-bottom: 20px;">Salut, <span id="display-name" style="color: var(--primary)">...</span> !</h2>
@@ -131,7 +190,7 @@
                         </div>
                         <div class="input-group">
                             <label class="input-label">Poids (kg)</label>
-                            <input type="number" id="user-weight">
+                            <input type="number" id="user-weight" step="0.1">
                         </div>
                     </div>
                     <button type="button" class="btn-submit" id="btn-save-profile">Enregistrer mon profil</button>
@@ -309,6 +368,9 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Variable globale pour stocker les infos du profil localement
+        let currentUserData = null;
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('auth-section').style.display = 'none';
@@ -317,6 +379,7 @@
             } else {
                 document.getElementById('auth-section').style.display = 'block';
                 document.getElementById('app-section').style.display = 'none';
+                currentUserData = null;
             }
         });
 
@@ -330,14 +393,54 @@
         async function loadUserProfile(uid) {
             const docSnap = await getDoc(doc(db, "users", uid));
             if (docSnap.exists()) {
-                const data = docSnap.data();
-                document.getElementById('display-name').textContent = data.nom;
+                currentUserData = docSnap.data();
+                document.getElementById('display-name').textContent = currentUserData.nom;
                 document.getElementById('profile-setup').style.display = 'none';
             } else {
                 document.getElementById('profile-setup').style.display = 'block';
             }
         }
 
+        // --- LOGIQUE DU POP-UP MODAL PROFIL ---
+        const profileModal = document.getElementById('profile-modal');
+        
+        // Ouvrir le pop-up et pré-remplir les champs
+        document.getElementById('btn-open-modal').onclick = () => {
+            if(currentUserData) {
+                document.getElementById('modal-fullname').value = currentUserData.nom || '';
+                document.getElementById('modal-height').value = currentUserData.taille || '';
+                document.getElementById('modal-weight').value = currentUserData.poids || '';
+            }
+            profileModal.style.display = 'flex';
+        };
+
+        // Fermer le pop-up (bouton X)
+        document.getElementById('close-modal').onclick = () => {
+            profileModal.style.display = 'none';
+        };
+
+        // Fermer le pop-up si on clique en dehors de la boite blanche
+        window.onclick = (event) => {
+            if (event.target == profileModal) {
+                profileModal.style.display = 'none';
+            }
+        };
+
+        // Sauvegarder les modifications du modal
+        document.getElementById('btn-update-profile').onclick = async () => {
+            const uid = auth.currentUser.uid;
+            const profile = {
+                nom: document.getElementById('modal-fullname').value,
+                taille: document.getElementById('modal-height').value,
+                poids: document.getElementById('modal-weight').value
+            };
+            await setDoc(doc(db, "users", uid), profile);
+            alert("Profil mis à jour avec succès !");
+            profileModal.style.display = 'none';
+            loadUserProfile(uid); // Recharge les données à l'écran
+        };
+
+        // Sauvegarder le profil initial (si nouveau compte)
         document.getElementById('btn-save-profile').onclick = async () => {
             const uid = auth.currentUser.uid;
             const profile = {
