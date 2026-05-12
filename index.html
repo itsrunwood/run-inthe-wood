@@ -7,8 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f6357;
-            --primary-light: #F0EDFF;
+            /* NOUVELLES COULEURS ICI */
+            --primary: #4f6357; 
+            --primary-light: #e6ece8; /* Un vert très clair pour les fonds */
             --bg-color: #F4F7F6;
             --card-bg: #FFFFFF;
             --text-main: #1C1C1E;
@@ -39,7 +40,8 @@
         .segmented-control { display: flex; background: var(--primary-light); border-radius: 12px; padding: 4px; margin-bottom: 15px; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control label { flex: 1; text-align: center; padding: 10px 0; border-radius: 8px; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
-        .segmented-control input[type="radio"]:checked + label { background: var(--primary); color: white; }
+        /* L'ombre prend désormais la couleur verte en RGB (79, 99, 87) */
+        .segmented-control input[type="radio"]:checked + label { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(79, 99, 87, 0.3); }
 
         .date-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; scroll-behavior: smooth; }
         .date-scroll::-webkit-scrollbar { display: none; }
@@ -57,7 +59,9 @@
         .grid-buttons label { text-align: center; padding: 12px 5px; border-radius: 12px; font-size: 14px; background: #F8F8F8; border: 1px solid var(--border-color); cursor: pointer; }
         .grid-buttons input[type="radio"]:checked + label { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .btn-submit { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(107, 78, 255, 0.3); }
+        /* Ombre du bouton principal adaptée en vert */
+        .btn-submit { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(79, 99, 87, 0.3); transition: 0.2s;}
+        .btn-submit:hover { filter: brightness(1.1); }
 
         /* --- STYLES DU LOGO --- */
         .ritw-logo {
@@ -399,10 +403,16 @@
             try {
                 await addDoc(collection(db, "performances"), donnees);
                 alert("🏃‍♂️ Séance enregistrée !");
+                // Réinitialisation partielle pour la prochaine saisie
+                document.getElementById('distance').value = 10;
+                document.getElementById('duree').value = 60;
+                document.getElementById('altitude').value = 300;
+                document.getElementById('fc_moy').value = '';
+                document.getElementById('fc_max').value = '';
                 btn.textContent = "Enregistrer la séance";
             } catch (error) { 
                 console.error(error);
-                alert("Erreur lors de l'enregistrement."); 
+                alert("Erreur lors de l'enregistrement. Regarde la console."); 
                 btn.textContent = "Réessayer"; 
             }
         };
