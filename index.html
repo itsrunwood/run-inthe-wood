@@ -44,9 +44,19 @@
         .segmented-control label { flex: 1; text-align: center; padding: 10px 0; border-radius: 8px; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
         .segmented-control input[type="radio"]:checked + label { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(79, 99, 87, 0.3); }
 
-        .date-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; scroll-behavior: smooth; }
+        /* --- STYLES SCROLL DATES --- */
+        .date-wrapper { display: flex; align-items: center; gap: 10px; }
+        .scroll-btn {
+            background: var(--primary-light); color: var(--primary); border: none; 
+            width: 32px; height: 32px; border-radius: 50%; font-size: 14px; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; flex-shrink: 0; transition: 0.2s;
+        }
+        .scroll-btn:hover { background: var(--primary); color: white; }
+        
+        .date-scroll { flex: 1; display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; scrollbar-width: none; scroll-behavior: smooth; }
         .date-scroll::-webkit-scrollbar { display: none; }
-        .date-pill { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 70px; height: 80px; border: 1px solid var(--border-color); border-radius: 16px; cursor: pointer; }
+        .date-pill { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 70px; height: 80px; border: 1px solid var(--border-color); border-radius: 16px; cursor: pointer; transition: 0.2s; }
         .date-pill input[type="radio"] { display: none; }
         .date-pill:has(input[type="radio"]:checked) { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
 
@@ -217,7 +227,11 @@
 
                 <div class="card">
                     <h3 class="card-title">Date de la séance</h3>
-                    <div class="date-scroll" id="dateContainer"></div>
+                    <div class="date-wrapper">
+                        <button type="button" class="scroll-btn" id="scrollLeft">&#10094;</button>
+                        <div class="date-scroll" id="dateContainer"></div>
+                        <button type="button" class="scroll-btn" id="scrollRight">&#10095;</button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -452,7 +466,9 @@
 
         const dateContainer = document.getElementById('dateContainer');
         const joursSemaine = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-        for (let i = -3; i <= 3; i++) {
+        
+        // Génération des dates (-30 jours à +3 jours)
+        for (let i = -30; i <= 3; i++) {
             let d = new Date(); d.setDate(d.getDate() + i);
             let isChecked = i === 0 ? 'checked' : '';
             dateContainer.innerHTML += `
@@ -463,10 +479,27 @@
                 </label>`;
         }
         
+        // Centrage sur la date du jour au démarrage
         setTimeout(() => {
             const checkedDate = document.querySelector('input[name="date_course"]:checked');
-            if(checkedDate) checkedDate.parentElement.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            if(checkedDate) {
+                checkedDate.parentElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
         }, 200);
+
+        // Défilement avec la molette de la souris
+        dateContainer.addEventListener('wheel', (evt) => {
+            evt.preventDefault();
+            dateContainer.scrollLeft += evt.deltaY;
+        });
+
+        // Défilement avec les flèches cliquables
+        document.getElementById('scrollLeft').addEventListener('click', () => {
+            dateContainer.scrollBy({ left: -160, behavior: 'smooth' }); // Défile de ~2 blocs vers la gauche
+        });
+        document.getElementById('scrollRight').addEventListener('click', () => {
+            dateContainer.scrollBy({ left: 160, behavior: 'smooth' }); // Défile de ~2 blocs vers la droite
+        });
 
         document.getElementById('dataForm').onsubmit = async (e) => {
             e.preventDefault();
@@ -496,7 +529,6 @@
             };
             
             try {
-                // ---> CHANGEMENT ICI : "data" au lieu de "performances" <---
                 await addDoc(collection(db, "data"), donnees);
                 
                 alert("🏃‍♂️ Séance enregistrée !");
