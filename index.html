@@ -123,6 +123,17 @@
             transition: 0.2s;
         }
         .close-modal:hover { color: var(--text-main); }
+        
+        /* Lien mot de passe oublié */
+        .forgot-link {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 15px;
+            display: inline-block;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .forgot-link:hover { color: var(--primary); }
     </style>
 </head>
 <body>
@@ -147,6 +158,8 @@
                 </div>
             </div>
             <button type="button" class="btn-submit" id="btn-update-profile">Mettre à jour</button>
+            
+            <button type="button" class="btn-submit" id="btn-reset-pwd-profile" style="background: var(--text-muted); margin-top: 15px; font-size: 14px; padding: 12px;">Modifier mon mot de passe</button>
         </div>
     </div>
 
@@ -167,6 +180,8 @@
                     <input type="password" id="auth-password" placeholder="Mot de passe">
                 </div>
                 <button class="btn-submit" id="btn-login">Se connecter</button>
+                
+                <span class="forgot-link" id="btn-forgot-pwd">Mot de passe oublié ?</span>
             </div>
         </section>
 
@@ -297,6 +312,11 @@
                             <option value="Autre">Autre gêne musculaire/articulaire</option>
                         </select>
                     </div>
+                    
+                    <div class="input-group" id="douleur-km-container" style="display: none; margin-top: 15px; margin-bottom: 0;">
+                        <label class="input-label">Déclenchée à partir de (km)</label>
+                        <input type="number" id="douleur_km" step="0.1" placeholder="Ex: 5.5">
+                    </div>
                 </div>
 
                 <div class="card">
@@ -326,7 +346,7 @@
                         </div>
                     </div>
                     
-                    <div style="display: flex; gap: 15px; margin-bottom: 0;">
+                    <div style="display: flex; gap: 15px;">
                         <div class="input-group" style="margin-bottom: 0;">
                             <label class="input-label">Heure</label>
                             <input type="time" id="heure_course">
@@ -335,6 +355,16 @@
                             <label class="input-label">Temp. (°C)</label>
                             <input type="number" id="temperature" step="0.1">
                         </div>
+                    </div>
+
+                    <!-- NOUVEAU BLOC : Écoute pendant la course -->
+                    <div class="input-group" style="margin-top: 15px; margin-bottom: 0;">
+                        <label class="input-label">Écoute pendant la course</label>
+                        <select id="audio_ecoute" required>
+                            <option value="Rien">Rien</option>
+                            <option value="Musique">Musique</option>
+                            <option value="Podcast">Podcast</option>
+                        </select>
                     </div>
                 </div>
 
@@ -366,7 +396,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCenj1Lv78UkJSp6XZoqxoJHvTaL-_LWoI",
@@ -397,10 +427,24 @@
 
         document.getElementById('btn-login').onclick = () => {
             signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
-            .catch(err => alert("Erreur de connexion"));
+            .catch(err => alert("Erreur de connexion. Vérifiez vos identifiants."));
         };
 
         document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+        document.getElementById('btn-forgot-pwd').onclick = () => {
+            const email = document.getElementById('auth-email').value;
+            if (!email) {
+                alert("Veuillez d'abord écrire votre adresse e-mail dans le champ prévu juste au-dessus, puis cliquez sur 'Mot de passe oublié ?'.");
+                return;
+            }
+            sendPasswordResetEmail(auth, email)
+                .then(() => alert("Si ce compte existe, un e-mail de réinitialisation vient d'être envoyé à : " + email))
+                .catch(err => {
+                    console.error(err);
+                    alert("Erreur lors de l'envoi. Vérifiez que l'adresse e-mail est valide.");
+                });
+        };
 
         async function loadUserProfile(uid) {
             const docSnap = await getDoc(doc(db, "users", uid));
@@ -447,6 +491,21 @@
             loadUserProfile(uid); 
         };
 
+        document.getElementById('btn-reset-pwd-profile').onclick = () => {
+            const user = auth.currentUser;
+            if (user && user.email) {
+                sendPasswordResetEmail(auth, user.email)
+                    .then(() => {
+                        alert("Un e-mail de modification de mot de passe vient d'être envoyé à " + user.email + ".\nSuivez les instructions dans l'e-mail.");
+                        profileModal.style.display = 'none';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Erreur lors de la demande. Veuillez réessayer plus tard.");
+                    });
+            }
+        };
+
         document.getElementById('btn-save-profile').onclick = async () => {
             const uid = auth.currentUser.uid;
             const profile = {
@@ -467,7 +526,6 @@
         const dateContainer = document.getElementById('dateContainer');
         const joursSemaine = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
         
-        // Génération des dates (-30 jours à +3 jours)
         for (let i = -30; i <= 3; i++) {
             let d = new Date(); d.setDate(d.getDate() + i);
             let isChecked = i === 0 ? 'checked' : '';
@@ -479,7 +537,6 @@
                 </label>`;
         }
         
-        // Centrage sur la date du jour au démarrage
         setTimeout(() => {
             const checkedDate = document.querySelector('input[name="date_course"]:checked');
             if(checkedDate) {
@@ -487,18 +544,29 @@
             }
         }, 200);
 
-        // Défilement avec la molette de la souris
         dateContainer.addEventListener('wheel', (evt) => {
             evt.preventDefault();
             dateContainer.scrollLeft += evt.deltaY;
         });
 
-        // Défilement avec les flèches cliquables
         document.getElementById('scrollLeft').addEventListener('click', () => {
-            dateContainer.scrollBy({ left: -160, behavior: 'smooth' }); // Défile de ~2 blocs vers la gauche
+            dateContainer.scrollBy({ left: -160, behavior: 'smooth' });
         });
         document.getElementById('scrollRight').addEventListener('click', () => {
-            dateContainer.scrollBy({ left: 160, behavior: 'smooth' }); // Défile de ~2 blocs vers la droite
+            dateContainer.scrollBy({ left: 160, behavior: 'smooth' });
+        });
+
+        const selectDouleur = document.getElementById('douleur');
+        const containerDouleurKm = document.getElementById('douleur-km-container');
+        const inputDouleurKm = document.getElementById('douleur_km');
+
+        selectDouleur.addEventListener('change', (e) => {
+            if (e.target.value !== 'Aucune') {
+                containerDouleurKm.style.display = 'block';
+            } else {
+                containerDouleurKm.style.display = 'none';
+                inputDouleurKm.value = ''; 
+            }
         });
 
         document.getElementById('dataForm').onsubmit = async (e) => {
@@ -506,6 +574,9 @@
             const btn = e.target.querySelector('.btn-submit');
             btn.textContent = "Enregistrement...";
             
+            const douleurType = document.getElementById('douleur').value;
+            const douleurKmValue = douleurType !== 'Aucune' ? parseFloat(inputDouleurKm.value) || null : null;
+
             const donnees = {
                 userId: auth.currentUser.uid,
                 nom: document.getElementById('display-name').textContent,
@@ -518,11 +589,13 @@
                 fc_moy: parseInt(document.getElementById('fc_moy').value) || null,
                 fc_max: parseInt(document.getElementById('fc_max').value) || null,
                 sommeil: parseInt(document.getElementById('sommeil').value),
-                douleur: document.getElementById('douleur').value,
+                douleur: douleurType,
+                douleur_declenchement_km: douleurKmValue, 
                 lieu: document.getElementById('lieu').value,
                 meteo: document.getElementById('meteo').value,
                 heure: document.getElementById('heure_course').value,
                 temp: parseFloat(document.getElementById('temperature').value) || null,
+                audio: document.getElementById('audio_ecoute').value, // <-- AJOUT DE LA DONNÉE AUDIO
                 motivation: parseInt(document.querySelector('input[name="motivation"]:checked').value),
                 rpe: parseInt(document.getElementById('rpe').value),
                 timestamp: new Date().toISOString()
@@ -532,11 +605,17 @@
                 await addDoc(collection(db, "data"), donnees);
                 
                 alert("🏃‍♂️ Séance enregistrée !");
+                
                 document.getElementById('distance').value = 10;
                 document.getElementById('duree').value = 60;
                 document.getElementById('altitude').value = 300;
                 document.getElementById('fc_moy').value = '';
                 document.getElementById('fc_max').value = '';
+                document.getElementById('douleur').value = 'Aucune';
+                document.getElementById('audio_ecoute').value = 'Rien'; // <-- RÉINITIALISATION DU CHAMP AUDIO
+                containerDouleurKm.style.display = 'none';
+                inputDouleurKm.value = '';
+                
                 btn.textContent = "Enregistrer la séance";
             } catch (error) { 
                 console.error(error);
